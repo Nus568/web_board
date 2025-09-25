@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Posts</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h3>Create New Post</h3>
+<form id="postForm">
+  <input type="text" id="postTitle" placeholder="Title" required><br>
+  <textarea id="postContent" placeholder="Content" required></textarea><br>
+  <button type="submit">➕ Add Post</button>
+</form>
+<hr>
+  <h2>Welcome, <span id="userDisplay"></span></h2>
+  <button onclick="logout()">Logout</button>
+
+  <div id="postsContainer"></div>
+
+  <script src="posts.js"></script>
+</body>
+</html>
