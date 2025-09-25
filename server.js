@@ -30,16 +30,14 @@ mongoose.connect('mongodb://127.0.0.1:27017/webboard', {
 
 app.post('/register', async (req, res) => {
   try {
-    const { username, email, password } = req.body;
+    const { username, email, password, role = 'user' } = req.body;
+
 
     // ✅ แฮชรหัสผ่านก่อนบันทึก
     const passwordHash = await bcrypt.hash(password, 10);
 
-    const user = new User({
-      username,
-      email,
-      password: passwordHash
-    });
+    const user = new User({ username, email, password: passwordHash, role });
+
 
     await user.save();
     res.json({ message: '✅ Registered successfully' });
@@ -59,7 +57,8 @@ app.post('/login', async (req, res) => {
     if (!isMatch) return res.status(401).json({ error: 'Invalid password' });
 
     
-    res.json({ message: '✅ Login successful', userId: user._id });
+    res.json({ message: '✅ Login successful', userId: user._id, role: user.role });
+
 
     
   } catch (err) {
@@ -192,13 +191,22 @@ app.post('/posts', async (req, res) => {
 app.delete('/posts/:id', async (req, res) => {
   try {
     const { userId } = req.body;
-
+    const user = await User.findById(userId);
     const post = await Post.findById(req.params.id);
+    const isOwner = post.author.toString() === userId;
+    const isAdmin = user.role === 'admin';
+
+    
     if (!post) return res.status(404).json({ error: 'Post not found' });
 
     if (post.author.toString() !== userId) {
       return res.status(403).json({ error: '❌ You are not the owner of this post' });
     }
+
+    if (!isOwner && !isAdmin) {
+  return res.status(403).json({ error: '❌ You do not have permission to delete this post' });
+}
+
 
     await Post.findByIdAndDelete(req.params.id);
     res.json({ message: '✅ Post deleted successfully' });

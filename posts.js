@@ -7,7 +7,9 @@ fetch('http://localhost:3000/posts')
     const container = document.getElementById('postsContainer');
     posts.forEach(post => {
       const div = document.createElement('div');
-      const userId = localStorage.getItem('userId'); // ✅ เพิ่มตรงนี้
+      const userId = localStorage.getItem('userId');     // ✅ ดึง userId
+      const role = localStorage.getItem('role');         // ✅ ดึง role
+
       div.innerHTML = `
         <h3>${post.title}</h3>
         <p>${post.content}</p>
@@ -20,7 +22,7 @@ fetch('http://localhost:3000/posts')
         <div>
          <button onclick="toggleComments('${post._id}')" id="toggle-${post._id}">💬 Comments (...)</button>
         <div id="comments-${post._id}" style="display: none;"></div>
-        ${post.author?._id === userId ? `<button onclick="deletePost('${post._id}')">🗑️ Delete</button>` : ''}
+        ${post.author?._id === userId || role === 'admin' ? `<button onclick="deletePost('${post._id}')">🗑️ Delete</button>` : ''}
         </div>
         <hr>
       `;

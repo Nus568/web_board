@@ -17,7 +17,8 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     if (res.ok) {
       localStorage.setItem('username', username);
       localStorage.setItem('userId', data.userId); // ✅ ต้องมี
-      
+      localStorage.setItem('role', data.role); // ✅ เก็บ role
+
 
       window.location.href = 'posts.html';
     } else {
