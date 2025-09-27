@@ -10,6 +10,22 @@ fetch('http://localhost:3000/posts')
       const div = document.createElement('div');
       const userId = localStorage.getItem('userId');     // ✅ ดึง userId
       const role = localStorage.getItem('role');         // ✅ ดึง role
+      if (role === 'admin') {
+  document.getElementById('adminToggleBtn').style.display = 'block';
+
+  document.getElementById('adminToggleBtn').addEventListener('click', () => {
+    const popup = document.getElementById('adminPopup');
+    const isVisible = popup.style.display === 'block';
+    popup.style.display = isVisible ? 'none' : 'block';
+
+    if (!isVisible) {
+      loadAdminRequests(); // ✅ โหลดคำขอ admin
+      loadAdminReports();  // ✅ โหลดรายงานโพสต์
+    }
+  });
+} else {
+  document.getElementById('adminToggleBtn').style.display = 'none'; // ✅ ซ่อนปุ่ม
+}
 
       div.innerHTML = `
         <h3>${post.title}</h3>
@@ -242,7 +258,7 @@ document.getElementById('adminToggleBtn').addEventListener('click', () => {
 function reportPost(postId) {
   const userId = localStorage.getItem('userId');
   const reason = prompt('กรุณาระบุเหตุผลที่รายงานโพสต์นี้:');
-  if (!reason) return;
+  if (!reason || !userId) return alert('❌ ข้อมูลไม่ครบ');
 
   fetch('http://localhost:3000/reports', {
     method: 'POST',
@@ -250,8 +266,13 @@ function reportPost(postId) {
     body: JSON.stringify({ postId, userId, reason })
   })
   .then(res => res.json())
-  .then(data => alert(data.message))
-  .catch(err => alert('❌ ไม่สามารถส่งรายงานได้'));
+  .then(data => {
+    alert(data.message || '✅ ส่งรายงานสำเร็จ');
+  })
+  .catch(err => {
+    console.error('❌ Report error:', err);
+    alert('❌ ไม่สามารถส่งรายงานได้');
+  });
 }
 
 function loadAdminReports() {

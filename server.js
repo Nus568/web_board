@@ -200,13 +200,11 @@ app.delete('/posts/:id', async (req, res) => {
     const post = await Post.findById(req.params.id);
     const isOwner = post.author.toString() === userId;
     const isAdmin = user.role === 'admin';
-
+   
     
     if (!post) return res.status(404).json({ error: 'Post not found' });
 
-    if (post.author.toString() !== userId) {
-      return res.status(403).json({ error: '❌ You are not the owner of this post' });
-    }
+    
 
     if (!isOwner && !isAdmin) {
   return res.status(403).json({ error: '❌ You do not have permission to delete this post' });
