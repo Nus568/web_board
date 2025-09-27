@@ -3,6 +3,7 @@ document.getElementById('userDisplay').textContent = localStorage.getItem('usern
 // 🔹 โหลดโพสต์ทั้งหมด
 fetch('http://localhost:3000/posts')
   .then(res => res.json())
+  
   .then(posts => {
     const container = document.getElementById('postsContainer');
     posts.forEach(post => {
@@ -19,16 +20,28 @@ fetch('http://localhost:3000/posts')
         <input type="text" id="comment-${post._id}" placeholder="Add comment">
         <button onclick="commentPost('${post._id}')">💬 Comment</button> <!-- ✅ เพิ่มตรงนี้ -->
         
+        
         <div>
          <button onclick="toggleComments('${post._id}')" id="toggle-${post._id}">💬 Comments (...)</button>
         <div id="comments-${post._id}" style="display: none;"></div>
+        <button onclick="reportPost('${post._id}')">🚩 รายงานโพสต์</button>
         ${post.author?._id === userId || role === 'admin' ? `<button onclick="deletePost('${post._id}')">🗑️ Delete</button>` : ''}
         </div>
         <hr>
       `;
       container.appendChild(div);
       loadComments(post._id); // ✅ โหลดคอมเมนต์ของแต่ละโพสต์
+      
+
     });
+  });
+  fetch('http://localhost:3000/admin/reports')
+  .then(res => res.json()) // ✅ ต้องเป็น JSON
+  .then(reports => {
+    // แสดงรายงาน
+  })
+  .catch(err => {
+    console.error('❌ Failed to load reports:', err);
   });
 
 // ✅ เพิ่มคอมเมนต์ให้โพสต์  
@@ -178,3 +191,112 @@ function deletePost(postId) {
   });
 }
 
+function loadAdminRequests() {
+  fetch('http://localhost:3000/admin/requests')
+    .then(res => res.json())
+    .then(users => {
+      const container = document.getElementById('adminRequests');
+      container.innerHTML = '<h3>คำขอเป็นผู้ดูแลระบบ</h3>';
+
+      users.forEach(user => {
+        const div = document.createElement('div');
+        div.innerHTML = `
+          <p>👤 ${user.username} (${user.email})</p>
+          <button onclick="approveAdmin('${user._id}')">✅ อนุมัติ</button>
+          <button onclick="rejectAdmin('${user._id}')">❌ ปฏิเสธ</button>
+          <hr>
+        `;
+        container.appendChild(div);
+      });
+    });
+}
+
+function approveAdmin(userId) {
+  fetch(`http://localhost:3000/admin/approve/${userId}`, { method: 'POST' })
+    .then(res => res.json())
+    .then(data => {
+      alert(data.message);
+      loadAdminRequests();
+    });
+}
+
+function rejectAdmin(userId) {
+  fetch(`http://localhost:3000/admin/reject/${userId}`, { method: 'POST' })
+    .then(res => res.json())
+    .then(data => {
+      alert(data.message);
+      loadAdminRequests();
+    });
+}
+document.getElementById('adminToggleBtn').addEventListener('click', () => {
+  const popup = document.getElementById('adminPopup');
+  const isVisible = popup.style.display === 'block';
+  popup.style.display = isVisible ? 'none' : 'block';
+
+  if (!isVisible) {
+    loadAdminRequests(); // ✅ โหลดคำขอ admin
+    loadAdminReports();  // ✅ โหลดรายงานโพสต์
+  }
+});
+// ✅ รายงานโพสต์
+function reportPost(postId) {
+  const userId = localStorage.getItem('userId');
+  const reason = prompt('กรุณาระบุเหตุผลที่รายงานโพสต์นี้:');
+  if (!reason) return;
+
+  fetch('http://localhost:3000/reports', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ postId, userId, reason })
+  })
+  .then(res => res.json())
+  .then(data => alert(data.message))
+  .catch(err => alert('❌ ไม่สามารถส่งรายงานได้'));
+}
+
+function loadAdminReports() {
+  fetch('http://localhost:3000/admin/reports')
+    .then(res => res.json())
+    .then(reports => {
+      const container = document.getElementById('adminReports');
+      container.innerHTML = '<h3>🚩 รายงานโพสต์</h3>';
+
+      reports.forEach(report => {
+        const div = document.createElement('div');
+        div.innerHTML = `
+          <p><strong>โพสต์:</strong> ${report.post?.title || 'ไม่พบโพสต์'}</p>
+          <p><strong>เหตุผล:</strong> ${report.reason}</p>
+          <p><strong>ผู้รายงาน:</strong> ${report.reporter?.username || 'ไม่ทราบชื่อ'}</p>
+          <button onclick="approveReport('${report._id}', '${report.post?._id}')">✅ ลบโพสต์</button>
+          <button onclick="rejectReport('${report._id}')">❌ ละเว้น</button>
+          <hr>
+        `;
+        container.appendChild(div);
+      });
+    })
+    .catch(err => {
+      console.error('❌ Failed to load reports:', err);
+    });
+}
+
+function approveReport(reportId, postId) {
+  fetch(`http://localhost:3000/admin/reports/${reportId}/approve`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ postId })
+  })
+  .then(res => res.json())
+  .then(data => {
+    alert(data.message);
+    loadAdminReports();
+  });
+}
+
+function rejectReport(reportId) {
+  fetch(`http://localhost:3000/admin/reports/${reportId}/reject`, { method: 'POST' })
+    .then(res => res.json())
+    .then(data => {
+      alert(data.message);
+      loadAdminReports();
+    });
+}

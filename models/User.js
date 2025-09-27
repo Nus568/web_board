@@ -5,7 +5,7 @@ const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   email:    { type: String, required: true, unique: true },
   password: { type: String, required: true }, // เก็บรหัสผ่านแบบ hash
-  role:     { type: String, enum: ['user', 'admin'], default: 'user' }, // ✅ เพิ่มตรงนี้
+  role:     { type: String, enum: ['user', 'admin', 'pendingAdmin'], default: 'user' },
   createdAt: { type: Date, default: Date.now }
 });
 

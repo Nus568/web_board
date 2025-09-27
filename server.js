@@ -6,6 +6,9 @@ const bcrypt = require('bcrypt');
 const Post = require('./models/post'); // เพิ่มด้านบน
 const Comment = require('./models/Comment');const jwt = require('jsonwebtoken');
 const cors = require('cors');
+const Report = require('./models/report'); // ✅ ต้อง import model ก่อน (lowercase)
+
+
 
 
 
@@ -30,7 +33,9 @@ mongoose.connect('mongodb://127.0.0.1:27017/webboard', {
 
 app.post('/register', async (req, res) => {
   try {
-    const { username, email, password, role = 'user' } = req.body;
+    const { username, email, password, roleRequest } = req.body;
+    const role = roleRequest === 'admin' ? 'pendingAdmin' : 'user';
+    
 
 
     // ✅ แฮชรหัสผ่านก่อนบันทึก
@@ -213,5 +218,78 @@ app.delete('/posts/:id', async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: '❌ Failed to delete post', details: err.message });
   }
+
+  
+});
+//ระบบคำขอเป็นผู้ดูแลระบบ
+// ✅ ดึงคำขอเป็นผู้ดูแลระบบ
+app.get('/admin/requests', async (req, res) => {
+  try {
+    const pending = await User.find({ role: 'pendingAdmin' });
+    res.json(pending);
+  } catch (err) {
+    res.status(500).json({ error: '❌ Failed to fetch requests', details: err.message });
+  }
+});
+//
+app.post('/admin/approve/:id', async (req, res) => {
+  await User.findByIdAndUpdate(req.params.id, { role: 'admin' });
+  res.json({ message: '✅ Approved as admin' });
+});
+//
+app.post('/admin/reject/:id', async (req, res) => {
+  await User.findByIdAndUpdate(req.params.id, { role: 'user' });
+  res.json({ message: '❌ Rejected admin request' });
 });
 
+
+
+
+
+
+
+
+app.post('/reports', async (req, res) => {
+  try {
+    const { postId, userId, reason } = req.body;
+
+    const report = new Report({ post: postId, reporter: userId, reason });
+    await report.save();
+
+    res.json({ message: '✅ Report submitted successfully' });
+  } catch (err) {
+    res.status(500).json({ error: '❌ Failed to submit report', details: err.message });
+  }
+});
+
+app.get('/admin/reports', async (req, res) => {
+  try {
+    const reports = await Report.find({ status: 'pending' })
+      .populate('post', 'title content')
+      .populate('reporter', 'username email');
+
+    res.json(reports);
+  } catch (err) {
+    res.status(500).json({ error: '❌ Failed to fetch reports', details: err.message });
+  }
+});
+
+app.post('/admin/reports/:id/approve', async (req, res) => {
+  try {
+    const { postId } = req.body;
+    await Post.findByIdAndDelete(postId);
+    await Report.findByIdAndUpdate(req.params.id, { status: 'reviewed' });
+    res.json({ message: '✅ Post deleted and report reviewed' });
+  } catch (err) {
+    res.status(500).json({ error: '❌ Failed to approve report', details: err.message });
+  }
+});
+
+app.post('/admin/reports/:id/reject', async (req, res) => {
+  try {
+    await Report.findByIdAndUpdate(req.params.id, { status: 'reviewed' });
+    res.json({ message: '❌ Report rejected' });
+  } catch (err) {
+    res.status(500).json({ error: '❌ Failed to reject report', details: err.message });
+  }
+});

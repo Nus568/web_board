@@ -1,0 +1,39 @@
+<h2>สมัครสมาชิก</h2>
+<form id="registerForm">
+  <input type="text" id="username" placeholder="Username" required><br>
+  <input type="email" id="email" placeholder="Email" required><br>
+  <input type="password" id="password" placeholder="Password" required><br>
+  <select id="roleRequest">
+    <option value="user">ผู้ใช้งานทั่วไป</option>
+    <option value="admin">ขอเป็นผู้ดูแลระบบ</option>
+  </select><br>
+  <button type="submit">สมัครสมาชิก</button>
+  <button onclick="goBackToLogin()" style="margin-top: 10px;">🔙 ย้อนกลับไปหน้าเข้าสู่ระบบ</button>
+
+</form>
+<div id="result"></div>
+
+<script>
+document.getElementById('registerForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const username    = document.getElementById('username').value;
+  const email       = document.getElementById('email').value;
+  const password    = document.getElementById('password').value;
+  const roleRequest = document.getElementById('roleRequest').value;
+
+  const res = await fetch('http://localhost:3000/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, email, password, roleRequest })
+  });
+
+  const data = await res.json();
+  document.getElementById('result').textContent = data.message || data.error;
+  if (res.ok) window.location.href = 'login.html';
+});
+function goBackToLogin() {
+  window.location.href = 'login.html';
+}
+
+</script>
