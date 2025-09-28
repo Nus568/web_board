@@ -330,3 +330,23 @@ app.delete('/comments/:id', async (req, res) => {
     res.status(500).json({ error: '❌ Failed to delete comment', details: err.message });
   }
 });
+
+app.put('/posts/:id', async (req, res) => {
+  try {
+    const { title, content, category } = req.body;
+
+    const updated = await Post.findByIdAndUpdate(
+      req.params.id,
+      { title, content, category },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ error: '❌ Post not found' });
+    }
+
+    res.json({ message: '✅ Post updated successfully', post: updated });
+  } catch (err) {
+    res.status(500).json({ error: '❌ Failed to update post', details: err.message });
+  }
+});

@@ -10,6 +10,9 @@ fetch('http://localhost:3000/posts')
       const div = document.createElement('div');
       const userId = localStorage.getItem('userId');     // ✅ ดึง userId
       const role = localStorage.getItem('role');         // ✅ ดึง role
+      div.id = `post-${post._id}`; // ✅ เพิ่มบรรทัดนี้
+
+      
       
 if (role === 'admin') {
   document.getElementById('adminToggleBtn').style.display = 'block';
@@ -28,6 +31,7 @@ if (role === 'admin') {
   document.getElementById('adminToggleBtn').style.display = 'none'; // ✅ ซ่อนปุ่ม
 }
 
+
       div.innerHTML = `
         <h3>${post.title}</h3>
         <p>${post.content}</p>
@@ -44,6 +48,9 @@ if (role === 'admin') {
         <div id="comments-${post._id}" style="display: none;"></div>
         <button onclick="reportPost('${post._id}')">🚩 รายงานโพสต์</button>
         ${post.author?._id === userId || role === 'admin' ? `<button onclick="deletePost('${post._id}')">🗑️ Delete</button>` : ''}
+        ${post.author?._id === userId || role === 'admin' ? `
+        <button onclick="startEditPost('${post._id}', '${post.title}', '${post.content}', '${post.category}')">✏️ Edit</button>
+        `  : ''}
         </div>
         <hr>
       `;
@@ -377,4 +384,84 @@ function deleteComment(commentId, postId) {
     console.error(err);
     alert('เกิดข้อผิดพลาดในการลบคอมเมนต์');
   });
+}
+// ✅ แก้ไขโพสต์
+function startEditPost(postId, oldTitle, oldContent, oldCategory) {
+  const postDiv = document.getElementById(`post-${postId}`);
+  if (!postDiv) {
+    console.error('❌ ไม่พบ element สำหรับโพสต์:', postId);
+    return;
+  }
+
+  postDiv.innerHTML = `
+    <input type="text" id="editTitle-${postId}" value="${oldTitle}"><br>
+    <textarea id="editContent-${postId}">${oldContent}</textarea><br>
+    <select id="editCategory-${postId}">
+      <option value="ข่าวสาร" ${oldCategory === 'ข่าวสาร' ? 'selected' : ''}>ข่าวสาร</option>
+      <option value="รีวิว" ${oldCategory === 'รีวิว' ? 'selected' : ''}>รีวิว</option>
+      <option value="ถามตอบ" ${oldCategory === 'ถามตอบ' ? 'selected' : ''}>ถามตอบ</option>
+      <option value="อื่นๆ" ${oldCategory === 'อื่นๆ' ? 'selected' : ''}>อื่นๆ</option>
+    </select><br>
+    <button onclick="submitEditPost('${postId}')">💾 Save</button>
+    <button onclick="loadPosts()">❌ Cancel</button>
+  `;
+}
+//ยืนยันการแก้ไขโพสต์
+function submitEditPost(postId) {
+  const title = document.getElementById(`editTitle-${postId}`).value;
+  const content = document.getElementById(`editContent-${postId}`).value;
+  const category = document.getElementById(`editCategory-${postId}`).value;
+
+  fetch(`http://localhost:3000/posts/${postId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title, content, category })
+  })
+  .then(res => {
+    if (!res.ok) throw new Error('Failed to update post');
+    return res.json();
+  })
+  .then(() => loadPosts())
+  .catch(err => {
+    console.error(err);
+    alert('❌ เกิดข้อผิดพลาดในการแก้ไขโพสต์');
+  });
+}
+// โหลดโพสต์ใหม่ทั้งหมดเพื่อแก้ปัญหาการแสดงผลหาไม่เจอ
+function loadPosts() {
+  fetch('http://localhost:3000/posts')
+    .then(res => res.json())
+    .then(posts => {
+      const container = document.getElementById('postsContainer');
+      container.innerHTML = ''; // ✅ เคลียร์ก่อนโหลดใหม่
+
+      posts.forEach(post => {
+        const div = document.createElement('div');
+        div.id = `post-${post._id}`; // ✅ เพื่อให้แก้ไขได้
+
+        const userId = localStorage.getItem('userId');
+        const role = localStorage.getItem('role');
+
+        div.innerHTML = `
+          <h3>${post.title}</h3>
+          <p>${post.content}</p>
+          <p><strong>โพสต์โดย:</strong> ${post.author?.username || 'ไม่ทราบชื่อ'}</p>
+          <button onclick="likePost('${post._id}')">👍 Like</button>
+          <span id="likes-${post._id}">👍 ${post.likes?.length || 0}</span>
+          <input type="text" id="comment-${post._id}" placeholder="Add comment">
+          <button onclick="commentPost('${post._id}')">💬 Comment</button>
+          <p><span class="category-tag">📂 ${post.category}</span></p>
+          <button onclick="toggleComments('${post._id}')" id="toggle-${post._id}">💬 Comments (...)</button>
+          <div id="comments-${post._id}" style="display: none;"></div>
+          <button onclick="reportPost('${post._id}')">🚩 รายงานโพสต์</button>
+          ${post.author?._id === userId || role === 'admin' ? `
+            <button onclick="deletePost('${post._id}')">🗑️ Delete</button>
+            <button onclick="startEditPost('${post._id}', '${post.title}', '${post.content}', '${post.category}')">✏️ Edit</button>
+          ` : ''}
+          <hr>
+        `;
+        container.appendChild(div);
+        loadComments(post._id);
+      });
+    });
 }
