@@ -174,7 +174,7 @@ app.post('/posts/:id/like', async (req, res) => {
 // ✅ สร้างโพสต์
 app.post('/posts', async (req, res) => {
   try {
-    const { title, content, userId } = req.body;
+    const { title, content, category, userId } = req.body;
 
     if (!title || !content || !userId) {
       return res.status(400).json({ error: '❌ Missing required fields' });
@@ -183,6 +183,7 @@ app.post('/posts', async (req, res) => {
     const post = new Post({
       title,
       content,
+      category, // ✅ ต้องมีตรงนี้
       author: new mongoose.Types.ObjectId(userId)
     });
 

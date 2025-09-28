@@ -39,7 +39,8 @@ if (role === 'admin') {
         
         
         <div>
-         <button onclick="toggleComments('${post._id}')" id="toggle-${post._id}">💬 Comments (...)</button>
+        <p><span class="category-tag">📂 ${post.category}</span></p>
+        <button onclick="toggleComments('${post._id}')" id="toggle-${post._id}">💬 Comments (...)</button>
         <div id="comments-${post._id}" style="display: none;"></div>
         <button onclick="reportPost('${post._id}')">🚩 รายงานโพสต์</button>
         ${post.author?._id === userId || role === 'admin' ? `<button onclick="deletePost('${post._id}')">🗑️ Delete</button>` : ''}
@@ -174,6 +175,7 @@ document.getElementById('postForm').addEventListener('submit', async (e) => {
 
   const title = document.getElementById('postTitle').value;
   const content = document.getElementById('postContent').value;
+  const category = document.getElementById('postCategory').value;
   const userId = localStorage.getItem('userId');
 
   if (!userId) {
@@ -185,15 +187,14 @@ document.getElementById('postForm').addEventListener('submit', async (e) => {
     const res = await fetch('http://localhost:3000/posts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, content, userId })
+      body: JSON.stringify({ title, content, category, userId }) // ✅ ส่ง category ไปด้วย
     });
 
     const data = await res.json();
     if (res.ok) {
       alert(data.message);
-      document.getElementById('postTitle').value = '';
-      document.getElementById('postContent').value = '';
-      location.reload(); // ✅ โหลดใหม่เพื่อแสดงโพสต์ล่าสุด
+      document.getElementById('postForm').reset(); // ✅ เคลียร์ทุกช่อง
+      location.reload();
     } else {
       alert(data.error);
     }
