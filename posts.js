@@ -436,6 +436,8 @@ function loadPosts() {
       container.innerHTML = ''; // ✅ เคลียร์ก่อนโหลดใหม่
 
       posts.forEach(post => {
+        allPosts = posts; // ✅ เก็บไว้ใช้กรอง
+      renderPosts(posts); // ✅ แสดงทั้งหมดตอนแรก
         const div = document.createElement('div');
         div.id = `post-${post._id}`; // ✅ เพื่อให้แก้ไขได้
 
@@ -465,3 +467,54 @@ function loadPosts() {
       });
     });
 }
+
+let allPosts = []; // ✅ เก็บโพสต์ทั้งหมดไว้
+
+
+
+function renderPosts(posts) {
+  const container = document.getElementById('postsContainer');
+  container.innerHTML = '';
+
+  const userId = localStorage.getItem('userId');
+  const role = localStorage.getItem('role');
+
+  posts.forEach(post => {
+    const div = document.createElement('div');
+    div.className = 'post'; // ✅ ใส่ class เพื่อให้ style กลับมา
+
+    div.innerHTML = `
+      <h3>${post.title}</h3>
+      <p>${post.content}</p>
+      <p><strong>โพสต์โดย:</strong> ${post.author?.username || 'ไม่ทราบชื่อ'}</p>
+      <p><span class="category-tag">📂 ${post.category}</span></p>
+      <button onclick="likePost('${post._id}')">👍 Like</button>
+      <span id="likes-${post._id}">👍 ${post.likes?.length || 0}</span>
+      <input type="text" id="comment-${post._id}" placeholder="Add comment">
+      <button onclick="commentPost('${post._id}')">💬 Comment</button>
+      <button onclick="toggleComments('${post._id}')" id="toggle-${post._id}">💬 Comments (...)</button>
+      <div id="comments-${post._id}" style="display: none;"></div>
+      <button onclick="reportPost('${post._id}')">🚩 รายงานโพสต์</button>
+      ${post.author?._id === userId || role === 'admin' ? `
+        <button onclick="deletePost('${post._id}')">🗑️ Delete</button>
+        <button onclick="startEditPost('${post._id}', '${post.title}', '${post.content}', '${post.category}')">✏️ Edit</button>
+      ` : ''}
+      <hr>
+    `;
+    container.appendChild(div);
+    loadComments(post._id); // ✅ โหลดคอมเมนต์ของแต่ละโพสต์
+  });
+}
+document.addEventListener('DOMContentLoaded', () => {
+  loadPosts(); // ✅ โหลดทั้งหมดตอนเริ่ม
+
+  document.getElementById('categoryFilter').addEventListener('change', e => {
+    const selected = e.target.value;
+    if (selected) {
+      const filtered = allPosts.filter(post => post.category === selected);
+      renderPosts(filtered);
+    } else {
+      renderPosts(allPosts); // ✅ ถ้าเลือก "-- แสดงทั้งหมด --"
+    }
+  });
+});
