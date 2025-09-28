@@ -247,7 +247,7 @@ app.post('/admin/reject/:id', async (req, res) => {
 
 
 
-
+//ระบบรายงานโพสต์
 app.post('/reports', async (req, res) => {
   try {
     const { postId, userId, reason } = req.body;
@@ -260,7 +260,7 @@ app.post('/reports', async (req, res) => {
     res.status(500).json({ error: '❌ Failed to submit report', details: err.message });
   }
 });
-
+// ✅ ดึงรายงานโพสต์สำหรับแอดมิน
 app.get('/admin/reports', async (req, res) => {
   try {
     const reports = await Report.find({ status: 'pending' })
@@ -330,7 +330,7 @@ app.delete('/comments/:id', async (req, res) => {
     res.status(500).json({ error: '❌ Failed to delete comment', details: err.message });
   }
 });
-
+// ✅ แก้ไขโพสต์
 app.put('/posts/:id', async (req, res) => {
   try {
     const { title, content, category } = req.body;

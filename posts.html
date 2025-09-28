@@ -27,7 +27,15 @@
 <hr>
   <h2>Welcome, <span id="userDisplay"></span></h2>
   <button onclick="logout()">Logout</button>
-
+  <br><br>
+  <label for="categoryFilter">เลือกหมวดหมู่:</label>
+<select id="categoryFilter">
+  <option value="">-- แสดงทั้งหมด --</option>
+  <option value="ข่าวสาร">ข่าวสาร</option>
+  <option value="รีวิว">รีวิว</option>
+  <option value="ถามตอบ">ถามตอบ</option>
+  <option value="อื่นๆ">อื่นๆ</option>
+</select>
   <div id="postsContainer"></div>
 
 

@@ -35,15 +35,16 @@ if (role === 'admin') {
       div.innerHTML = `
         <h3>${post.title}</h3>
         <p>${post.content}</p>
-        <p><strong>โพสต์โดย:</strong> ${post.author?.username || 'ไม่ทราบชื่อ'}</p> <!-- ✅ เพิ่มตรงนี้ -->
+        <p><strong>โพสต์โดย:</strong> ${post.author?.username || 'ไม่ทราบชื่อ'}</p> <!--
+        <p><span class="category-tag">📂 ${post.category}</span></p> 
         <button onclick="likePost('${post._id}')">👍 Like</button>
        <span id="likes-${post._id}">👍 ${post.likes?.length || 0}</span>
         <input type="text" id="comment-${post._id}" placeholder="Add comment">
-        <button onclick="commentPost('${post._id}')">💬 Comment</button> <!-- ✅ เพิ่มตรงนี้ -->
+        <button onclick="commentPost('${post._id}')">💬 Comment</button> <!-- 
         
         
         <div>
-        <p><span class="category-tag">📂 ${post.category}</span></p>
+        
         <button onclick="toggleComments('${post._id}')" id="toggle-${post._id}">💬 Comments (...)</button>
         <div id="comments-${post._id}" style="display: none;"></div>
         <button onclick="reportPost('${post._id}')">🚩 รายงานโพสต์</button>
@@ -229,7 +230,7 @@ function deletePost(postId) {
     console.error(err);
   });
 }
-
+// ✅ โหลดคำขอเป็นแอดมิน
 function loadAdminRequests() {
   fetch('http://localhost:3000/admin/requests')
     .then(res => res.json())
@@ -249,7 +250,7 @@ function loadAdminRequests() {
       });
     });
 }
-
+// ✅ อนุมัติคำขอเป็นแอดมิน
 function approveAdmin(userId) {
   fetch(`http://localhost:3000/admin/approve/${userId}`, { method: 'POST' })
     .then(res => res.json())
@@ -258,7 +259,7 @@ function approveAdmin(userId) {
       loadAdminRequests();
     });
 }
-
+// ✅ ปฏิเสธคำขอเป็นแอดมิน
 function rejectAdmin(userId) {
   fetch(`http://localhost:3000/admin/reject/${userId}`, { method: 'POST' })
     .then(res => res.json())
@@ -292,7 +293,7 @@ function reportPost(postId) {
   .then(data => alert(data.message))
   .catch(err => alert('❌ ไม่สามารถส่งรายงานได้'));
 }
-
+// ✅ โหลดรายงานโพสต์สำหรับแอดมิน
 function loadAdminReports() {
   fetch('http://localhost:3000/admin/reports')
     .then(res => res.json())
@@ -317,7 +318,7 @@ function loadAdminReports() {
       console.error('❌ Failed to load reports:', err);
     });
 }
-
+// ✅ อนุมัติรายงาน (ลบโพสต์)
 function approveReport(reportId, postId) {
   fetch(`http://localhost:3000/admin/reports/${reportId}/approve`, {
     method: 'POST',
@@ -330,7 +331,7 @@ function approveReport(reportId, postId) {
     loadAdminReports();
   });
 }
-
+// ✅ ปฏิเสธรายงาน
 function rejectReport(reportId) {
   fetch(`http://localhost:3000/admin/reports/${reportId}/reject`, { method: 'POST' })
     .then(res => res.json())
@@ -339,7 +340,7 @@ function rejectReport(reportId) {
       loadAdminReports();
     });
 }
-
+// ✅ แก้ไขคอมเมนต์
 function startEditComment(commentId, oldText, postId) {
   const commentDiv = document.getElementById(`comment-${commentId}`);
   commentDiv.innerHTML = `
@@ -348,7 +349,7 @@ function startEditComment(commentId, oldText, postId) {
     <button onclick="loadComments('${postId}')">❌ Cancel</button>
   `;
 }
-
+//ยืนยันการแก้ไขคอมเมนต์
 function submitEditComment(commentId, postId) {
   const newText = document.getElementById(`editInput-${commentId}`).value;
 
@@ -367,7 +368,7 @@ function submitEditComment(commentId, postId) {
     alert('เกิดข้อผิดพลาดในการแก้ไข');
   });
 }
-
+// ✅ ลบคอมเมนต์
 function deleteComment(commentId, postId) {
   if (!confirm('คุณแน่ใจว่าต้องการลบคอมเมนต์นี้หรือไม่?')) return;
   console.log('Deleting comment:', commentId); // ✅ เพิ่ม log
@@ -432,6 +433,8 @@ function loadPosts() {
   fetch('http://localhost:3000/posts')
     .then(res => res.json())
     .then(posts => {
+       allPosts = posts; // ✅ เก็บไว้ใช้กรอง
+      renderPosts(posts); // ✅ แสดงทั้งหมดตอนแรก
       const container = document.getElementById('postsContainer');
       container.innerHTML = ''; // ✅ เคลียร์ก่อนโหลดใหม่
 
@@ -446,11 +449,12 @@ function loadPosts() {
           <h3>${post.title}</h3>
           <p>${post.content}</p>
           <p><strong>โพสต์โดย:</strong> ${post.author?.username || 'ไม่ทราบชื่อ'}</p>
+          <p><span class="category-tag">📂 ${post.category}</span></p>
           <button onclick="likePost('${post._id}')">👍 Like</button>
           <span id="likes-${post._id}">👍 ${post.likes?.length || 0}</span>
           <input type="text" id="comment-${post._id}" placeholder="Add comment">
           <button onclick="commentPost('${post._id}')">💬 Comment</button>
-          <p><span class="category-tag">📂 ${post.category}</span></p>
+          <p></p>
           <button onclick="toggleComments('${post._id}')" id="toggle-${post._id}">💬 Comments (...)</button>
           <div id="comments-${post._id}" style="display: none;"></div>
           <button onclick="reportPost('${post._id}')">🚩 รายงานโพสต์</button>
@@ -465,3 +469,56 @@ function loadPosts() {
       });
     });
 }
+
+
+let allPosts = []; // ✅ เก็บโพสต์ทั้งหมดไว้
+
+
+//แยกหมวดหมู่แบบdinamic 
+function renderPosts(posts) {
+  const container = document.getElementById('postsContainer');
+  container.innerHTML = '';
+
+  const userId = localStorage.getItem('userId');
+  const role = localStorage.getItem('role');
+
+  posts.forEach(post => {
+    const div = document.createElement('div');
+    div.className = 'post'; // ✅ ใส่ class เพื่อให้ style กลับมา
+
+    div.innerHTML = `
+      <h3>${post.title}</h3>
+      <p>${post.content}</p>
+      <p><strong>โพสต์โดย:</strong> ${post.author?.username || 'ไม่ทราบชื่อ'}</p>
+      <button onclick="likePost('${post._id}')">👍 Like</button>
+      <span id="likes-${post._id}">👍 ${post.likes?.length || 0}</span>
+      <input type="text" id="comment-${post._id}" placeholder="Add comment">
+      <button onclick="commentPost('${post._id}')">💬 Comment</button>
+      <p><span class="category-tag">📂 ${post.category}</span></p>
+      <button onclick="toggleComments('${post._id}')" id="toggle-${post._id}">💬 Comments (...)</button>
+      <div id="comments-${post._id}" style="display: none;"></div>
+      <button onclick="reportPost('${post._id}')">🚩 รายงานโพสต์</button>
+      ${post.author?._id === userId || role === 'admin' ? `
+        <button onclick="deletePost('${post._id}')">🗑️ Delete</button>
+        <button onclick="startEditPost('${post._id}', '${post.title}', '${post.content}', '${post.category}')">✏️ Edit</button>
+      ` : ''}
+      <hr>
+    `;
+    container.appendChild(div);
+    loadComments(post._id); // ✅ โหลดคอมเมนต์ของแต่ละโพสต์
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  loadPosts(); // ✅ โหลดทั้งหมดตอนเริ่ม
+
+  document.getElementById('categoryFilter').addEventListener('change', e => {
+    const selected = e.target.value;
+    if (selected) {
+      const filtered = allPosts.filter(post => post.category === selected);
+      renderPosts(filtered);
+    } else {
+      renderPosts(allPosts); // ✅ ถ้าเลือก "-- แสดงทั้งหมด --"
+    }
+  });
+});
