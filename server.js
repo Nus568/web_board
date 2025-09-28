@@ -271,7 +271,7 @@ app.get('/admin/reports', async (req, res) => {
     res.status(500).json({ error: '❌ Failed to fetch reports', details: err.message });
   }
 });
-
+//อนุมัติการอนุญาตแอดมิน
 app.post('/admin/reports/:id/approve', async (req, res) => {
   try {
     const { postId } = req.body;
@@ -282,12 +282,50 @@ app.post('/admin/reports/:id/approve', async (req, res) => {
     res.status(500).json({ error: '❌ Failed to approve report', details: err.message });
   }
 });
-
+//ปฏิเสธการอนุญาตแอดมิน
 app.post('/admin/reports/:id/reject', async (req, res) => {
   try {
     await Report.findByIdAndUpdate(req.params.id, { status: 'reviewed' });
     res.json({ message: '❌ Report rejected' });
   } catch (err) {
     res.status(500).json({ error: '❌ Failed to reject report', details: err.message });
+  }
+});
+// ✅ แก้ไขคอมเมนต์
+app.put('/comments/:id', async (req, res) => {
+  try {
+    const { content } = req.body;
+
+    const updated = await Comment.findByIdAndUpdate(
+      req.params.id,
+      { content },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ error: '❌ Comment not found' });
+    }
+
+    res.json({ success: true, updated });
+  } catch (err) {
+    res.status(500).json({ error: '❌ Failed to update comment', details: err.message });
+  }
+});
+// ✅ ลบคอมเมนต์
+app.delete('/comments/:id', async (req, res) => {
+  console.log('DELETE /comments/:id', req.params.id); // ✅ เพิ่ม log
+
+  try {
+    const deleted = await Comment.findByIdAndDelete(req.params.id);
+
+    if (!deleted) {
+      console.log('Comment not found'); // ✅ เพิ่ม log
+
+      return res.status(404).json({ error: '❌ Comment not found' });
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: '❌ Failed to delete comment', details: err.message });
   }
 });

@@ -139,19 +139,33 @@ function toggleComments(postId) {
 }
 // ✅ โหลดคอมเมนต์ของโพสต์
 function loadComments(postId) {
+  const userId = localStorage.getItem('userId');
+  const role = localStorage.getItem('role');
+
   fetch(`http://localhost:3000/comments/${postId}`)
     .then(res => res.json())
     .then(comments => {
       const container = document.getElementById(`comments-${postId}`);
-      container.innerHTML = comments.map(c => `
-      <p>💬 <strong>${c.author?.username || 'ไม่ทราบชื่อ'}:</strong> ${c.content}</p>
-      `).join('');
+      container.innerHTML = '';
 
-      // ✅ อัปเดตจำนวนคอมเมนต์บนปุ่ม
-     const toggleBtn = document.getElementById(`toggle-${postId}`);
-if (toggleBtn) {
-  toggleBtn.textContent = `💬 Commentator  (${comments.length})`;
-}
+      comments.forEach(comment => {
+        const div = document.createElement('div');
+        div.id = `comment-${comment._id}`;
+        div.innerHTML = `
+          <p>💬 <strong>${comment.author?.username || 'ไม่ทราบชื่อ'}:</strong> ${comment.content}</p>
+          ${comment.author?._id === userId || role === 'admin' ? `
+            <button onclick="startEditComment('${comment._id}', '${comment.content}', '${postId}')">✏️ Edit</button>
+            <button onclick="deleteComment('${comment._id}', '${postId}')">🗑️ Delete</button>
+
+          ` : ''}
+        `;
+        container.appendChild(div);
+      });
+
+      const toggleBtn = document.getElementById(`toggle-${postId}`);
+      if (toggleBtn) {
+        toggleBtn.textContent = `💬 Commentator (${comments.length})`;
+      }
     });
 }
 // ✅ สร้างโพสต์ใหม่
@@ -316,4 +330,50 @@ function rejectReport(reportId) {
       alert(data.message);
       loadAdminReports();
     });
+}
+
+function startEditComment(commentId, oldText, postId) {
+  const commentDiv = document.getElementById(`comment-${commentId}`);
+  commentDiv.innerHTML = `
+    <input type="text" id="editInput-${commentId}" value="${oldText}">
+    <button onclick="submitEditComment('${commentId}', '${postId}')">💾 Save</button>
+    <button onclick="loadComments('${postId}')">❌ Cancel</button>
+  `;
+}
+
+function submitEditComment(commentId, postId) {
+  const newText = document.getElementById(`editInput-${commentId}`).value;
+
+  fetch(`http://localhost:3000/comments/${commentId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content: newText })
+  })
+  .then(res => {
+    if (!res.ok) throw new Error('Failed to update comment');
+    return res.json();
+  })
+  .then(() => loadComments(postId))
+  .catch(err => {
+    console.error(err);
+    alert('เกิดข้อผิดพลาดในการแก้ไข');
+  });
+}
+
+function deleteComment(commentId, postId) {
+  if (!confirm('คุณแน่ใจว่าต้องการลบคอมเมนต์นี้หรือไม่?')) return;
+  console.log('Deleting comment:', commentId); // ✅ เพิ่ม log
+
+  fetch(`http://localhost:3000/comments/${commentId}`, {
+    method: 'DELETE'
+  })
+  .then(res => {
+    if (!res.ok) throw new Error('Failed to delete comment');
+    return res.json();
+  })
+  .then(() => loadComments(postId))
+  .catch(err => {
+    console.error(err);
+    alert('เกิดข้อผิดพลาดในการลบคอมเมนต์');
+  });
 }
