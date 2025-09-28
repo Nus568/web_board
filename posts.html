@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Posts</title>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -24,29 +25,16 @@
 
 
   <!-- ปุ่มเปิด popup -->
-<button id="adminToggleBtn" style="position: fixed; top: 10px; right: 10px; z-index: 1000;">
+<button id="adminToggleBtn" class="admin-toggle-btn">
   🛡️ คำขอผู้ดูแลระบบ
 </button>
 
 <!-- กล่อง popup -->
-<div id="adminPopup" style="
-  display: none;
-  position: fixed;
-  top: 50px;
-  right: 10px;
-  width: 300px;
-  max-height: 400px;
-  overflow-y: auto;
-  background: white;
-  border: 1px solid #ccc;
-  padding: 10px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.2);
-  z-index: 999;
-">
-  <h3>คำขอเป็นผู้ดูแลระบบ</h3>
+<div id="adminPopup" class="admin-popup">
+
   <div id="adminRequests"></div>
   <hr>
-  <h3></h3>
+  
   <div id="adminReports"></div>
 </div>
 

@@ -10,6 +10,23 @@ fetch('http://localhost:3000/posts')
       const div = document.createElement('div');
       const userId = localStorage.getItem('userId');     // ✅ ดึง userId
       const role = localStorage.getItem('role');         // ✅ ดึง role
+      
+if (role === 'admin') {
+  document.getElementById('adminToggleBtn').style.display = 'block';
+
+  document.getElementById('adminToggleBtn').addEventListener('click', () => {
+    const popup = document.getElementById('adminPopup');
+    const isVisible = popup.style.display === 'block';
+    popup.style.display = isVisible ? 'none' : 'block';
+
+    if (!isVisible) {
+      loadAdminRequests(); // ✅ โหลดคำขอ admin
+      loadAdminReports();  // ✅ โหลดรายงานโพสต์
+    }
+  });
+} else {
+  document.getElementById('adminToggleBtn').style.display = 'none'; // ✅ ซ่อนปุ่ม
+}
 
       div.innerHTML = `
         <h3>${post.title}</h3>

@@ -1,14 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>register</title>
+  <link rel="stylesheet" href="style.css">
+</head>
 <h2>สมัครสมาชิก</h2>
 <form id="registerForm">
-  <input type="text" id="username" placeholder="Username" required><br>
-  <input type="email" id="email" placeholder="Email" required><br>
-  <input type="password" id="password" placeholder="Password" required><br>
-  <select id="roleRequest">
+  <input type="text" id="username" name="username" placeholder="Username" autocomplete="username" required><br>
+  <input type="email" id="email" name="email" placeholder="Email" autocomplete="email" required><br>
+  <input type="password" id="password" name="password" placeholder="Password" autocomplete="new-password" required><br>
+
+
+  <label for="roleRequest">เลือกบทบาท:</label>
+    <select id="roleRequest" name="roleRequest" autocomplete="off">
+
     <option value="user">ผู้ใช้งานทั่วไป</option>
     <option value="admin">ขอเป็นผู้ดูแลระบบ</option>
   </select><br>
   <button type="submit">สมัครสมาชิก</button>
-  <button onclick="goBackToLogin()" style="margin-top: 10px;">🔙 ย้อนกลับไปหน้าเข้าสู่ระบบ</button>
+  <button onclick="goBackToLogin()" class="back-button">🔙 ย้อนกลับไปหน้าเข้าสู่ระบบ</button>
 
 </form>
 <div id="result"></div>
