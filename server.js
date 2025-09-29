@@ -8,6 +8,9 @@ const Comment = require('./models/Comment');const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const Report = require('./models/report'); // ✅ ต้อง import model ก่อน (lowercase)
 
+// ✅ Import Simple SQLite
+const { initDatabase, saveLog, getDashboardStats } = require('./simple-sqlite');
+
 
 
 
@@ -30,6 +33,9 @@ mongoose.connect('mongodb://127.0.0.1:27017/webboard', {
 })
 .then(() => console.log('✅ Connected to MongoDB'))
 .catch(err => console.error('❌ MongoDB connection error:', err));
+
+// ✅ เริ่มต้น SQLite Database
+initDatabase();
 
 app.post('/register', async (req, res) => {
   try {
@@ -61,6 +67,8 @@ app.post('/login', async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(401).json({ error: 'Invalid password' });
 
+    // ✅ บันทึก login log
+    saveLog(user._id.toString(), 'login', `User ${username} logged in`);
     
     res.json({ message: '✅ Login successful', userId: user._id, role: user.role });
 
@@ -70,6 +78,36 @@ app.post('/login', async (req, res) => {
     res.status(500).json({ error: '❌ Login failed', details: err.message });
   }
 });
+
+// ✅ Logout route
+app.post('/logout', async (req, res) => {
+  try {
+    const { userId } = req.body;
+    
+    // ✅ บันทึก logout log
+    saveLog(userId, 'logout', 'User logged out');
+    
+    res.json({ message: '✅ Logout successful' });
+  } catch (err) {
+    res.status(500).json({ error: '❌ Logout failed', details: err.message });
+  }
+});
+
+// ✅ Admin Dashboard route (แสดงหน้า HTML)
+app.get('/admin/dashboard', (req, res) => {
+  const path = require('path');
+  res.sendFile(path.join(__dirname, 'admin-dashboard.html'));
+});
+
+// ✅ Admin Dashboard data route (ส่งข้อมูล JSON)
+app.get('/admin/dashboard-data', (req, res) => {
+  getDashboardStats((stats) => {
+    res.json(stats);
+  });
+});
+
+// ✅ Static files
+app.use(express.static(__dirname));
 
 // ✅ Start server
 app.listen(PORT, () => {
@@ -350,3 +388,5 @@ app.put('/posts/:id', async (req, res) => {
     res.status(500).json({ error: '❌ Failed to update post', details: err.message });
   }
 });
+
+

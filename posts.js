@@ -1,5 +1,11 @@
 document.getElementById('userDisplay').textContent = localStorage.getItem('username');
 
+// ✅ แสดงปุ่ม Dashboard เฉพาะ admin
+const userRole = localStorage.getItem('role');
+if (userRole === 'admin') {
+  document.getElementById('dashboardBtn').style.display = 'inline-block';
+}
+
 // 🔹 โหลดโพสต์ทั้งหมด
 fetch('http://localhost:3000/posts')
   .then(res => res.json())
@@ -17,6 +23,7 @@ fetch('http://localhost:3000/posts')
         <h3>${post.title}</h3>
         <p>${post.content}</p>
         <p><strong>โพสต์โดย:</strong> ${post.author?.username || 'ไม่ทราบชื่อ'}</p> <!-- ✅ เพิ่มตรงนี้ -->
+        <p><span class="category-tag">📂 ${post.category}</span></p>
         <button onclick="likePost('${post._id}')">👍 Like</button>
        <span id="likes-${post._id}">👍 ${post.likes?.length || 0}</span>
         <input type="text" id="comment-${post._id}" placeholder="Add comment">
@@ -24,7 +31,7 @@ fetch('http://localhost:3000/posts')
         
         
         <div>
-        <p><span class="category-tag">📂 ${post.category}</span></p>
+        
         <button onclick="toggleComments('${post._id}')" id="toggle-${post._id}">💬 Comments (...)</button>
         <div id="comments-${post._id}" style="display: none;"></div>
         <button onclick="reportPost('${post._id}')">🚩 รายงานโพสต์</button>
@@ -112,9 +119,31 @@ function likePost(postId) {
 }
 // ✅ ออกจากระบบ
 function logout() {
-  localStorage.clear();
-  window.location.href = 'login.html';
+  const userId = localStorage.getItem('userId');
+  
+  // ส่ง logout request ไปที่ server
+  fetch('http://localhost:3000/logout', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId })
+  })
+  .then(() => {
+    localStorage.clear();
+    window.location.href = 'login.html';
+  })
+  .catch(err => {
+    console.error('❌ Logout error:', err);
+    // แม้จะ error ก็ให้ logout ได้
+    localStorage.clear();
+    window.location.href = 'login.html';
+  });
 }
+
+// 📊 ไปหน้า Admin Dashboard (เฉพาะ admin)
+function goToDashboard() {
+  window.location.href = 'http://localhost:3000/admin/dashboard';
+}
+
 // ✅ สลับแสดง/ซ่อน คอมเมนต์
 function toggleComments(postId) {
   const container = document.getElementById(`comments-${postId}`);
@@ -425,11 +454,12 @@ function loadPosts() {
           <h3>${post.title}</h3>
           <p>${post.content}</p>
           <p><strong>โพสต์โดย:</strong> ${post.author?.username || 'ไม่ทราบชื่อ'}</p>
+          <p><span class="category-tag">📂 ${post.category}</span></p>
           <button onclick="likePost('${post._id}')">👍 Like</button>
           <span id="likes-${post._id}">👍 ${post.likes?.length || 0}</span>
           <input type="text" id="comment-${post._id}" placeholder="Add comment">
           <button onclick="commentPost('${post._id}')">💬 Comment</button>
-          <p><span class="category-tag">📂 ${post.category}</span></p>
+          <br>
           <button onclick="toggleComments('${post._id}')" id="toggle-${post._id}">💬 Comments (...)</button>
           <div id="comments-${post._id}" style="display: none;"></div>
           <button onclick="reportPost('${post._id}')">🚩 รายงานโพสต์</button>
@@ -470,6 +500,7 @@ function renderPosts(posts) {
       <span id="likes-${post._id}">👍 ${post.likes?.length || 0}</span>
       <input type="text" id="comment-${post._id}" placeholder="Add comment">
       <button onclick="commentPost('${post._id}')">💬 Comment</button>
+      <br>
       <button onclick="toggleComments('${post._id}')" id="toggle-${post._id}">💬 Comments (...)</button>
       <div id="comments-${post._id}" style="display: none;"></div>
       <button onclick="reportPost('${post._id}')">🚩 รายงานโพสต์</button>
