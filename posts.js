@@ -12,26 +12,7 @@ fetch('http://localhost:3000/posts')
       const role = localStorage.getItem('role');         // ✅ ดึง role
       div.id = `post-${post._id}`; // ✅ เพิ่มบรรทัดนี้
 
-      
-      
-if (role === 'admin') {
-  document.getElementById('adminToggleBtn').style.display = 'block';
-
-  document.getElementById('adminToggleBtn').addEventListener('click', () => {
-    const popup = document.getElementById('adminPopup');
-    const isVisible = popup.style.display === 'block';
-    popup.style.display = isVisible ? 'none' : 'block';
-
-    if (!isVisible) {
-      loadAdminRequests(); // ✅ โหลดคำขอ admin
-      loadAdminReports();  // ✅ โหลดรายงานโพสต์
-    }
-  });
-} else {
-  document.getElementById('adminToggleBtn').style.display = 'none'; // ✅ ซ่อนปุ่ม
-}
-
-
+  
       div.innerHTML = `
         <h3>${post.title}</h3>
         <p>${post.content}</p>
@@ -267,16 +248,9 @@ function rejectAdmin(userId) {
       loadAdminRequests();
     });
 }
-document.getElementById('adminToggleBtn').addEventListener('click', () => {
-  const popup = document.getElementById('adminPopup');
-  const isVisible = popup.style.display === 'block';
-  popup.style.display = isVisible ? 'none' : 'block';
 
-  if (!isVisible) {
-    loadAdminRequests(); // ✅ โหลดคำขอ admin
-    loadAdminReports();  // ✅ โหลดรายงานโพสต์
-  }
-});
+
+
 // ✅ รายงานโพสต์
 function reportPost(postId) {
   const userId = localStorage.getItem('userId');
@@ -387,12 +361,15 @@ function deleteComment(commentId, postId) {
 }
 // ✅ แก้ไขโพสต์
 function startEditPost(postId, oldTitle, oldContent, oldCategory) {
+  console.log('🔧 Starting edit for post:', postId); // ✅ เพิ่ม debug
   const postDiv = document.getElementById(`post-${postId}`);
   if (!postDiv) {
     console.error('❌ ไม่พบ element สำหรับโพสต์:', postId);
+    alert('❌ ไม่สามารถแก้ไขโพสต์ได้ กรุณาลองใหม่');
     return;
   }
 
+  console.log('✅ Found post element, setting edit mode'); // ✅ เพิ่ม debug
   postDiv.innerHTML = `
     <input type="text" id="editTitle-${postId}" value="${oldTitle}"><br>
     <textarea id="editContent-${postId}">${oldContent}</textarea><br>
@@ -482,6 +459,7 @@ function renderPosts(posts) {
   posts.forEach(post => {
     const div = document.createElement('div');
     div.className = 'post'; // ✅ ใส่ class เพื่อให้ style กลับมา
+    div.id = `post-${post._id}`; // ✅ เพิ่มบรรทัดนี้เพื่อให้แก้ไขโพสต์ได้
 
     div.innerHTML = `
       <h3>${post.title}</h3>
@@ -497,7 +475,7 @@ function renderPosts(posts) {
       <button onclick="reportPost('${post._id}')">🚩 รายงานโพสต์</button>
       ${post.author?._id === userId || role === 'admin' ? `
         <button onclick="deletePost('${post._id}')">🗑️ Delete</button>
-        <button onclick="startEditPost('${post._id}', '${post.title}', '${post.content}', '${post.category}')">✏️ Edit</button>
+        <button onclick="startEditPost('${post._id}', \`${post.title.replace(/'/g, "&apos;")}\`, \`${post.content.replace(/'/g, "&apos;")}\`, '${post.category}')">✏️ Edit</button>
       ` : ''}
       <hr>
     `;
@@ -505,8 +483,31 @@ function renderPosts(posts) {
     loadComments(post._id); // ✅ โหลดคอมเมนต์ของแต่ละโพสต์
   });
 }
+// ✅ จัดการ Admin Toggle Button (ย้ายมาไว้ตำแหน่งที่ถูกต้อง)
+const role = localStorage.getItem('role');
+if (role === 'admin') {
+  document.getElementById('adminToggleBtn').style.display = 'block';
+} else {
+  document.getElementById('adminToggleBtn').style.display = 'none';
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   loadPosts(); // ✅ โหลดทั้งหมดตอนเริ่ม
+
+  // ✅ ตั้งค่า admin toggle button
+  const adminBtn = document.getElementById('adminToggleBtn');
+  if (adminBtn) {
+    adminBtn.addEventListener('click', () => {
+      const popup = document.getElementById('adminPopup');
+      const isVisible = popup.style.display === 'block';
+      popup.style.display = isVisible ? 'none' : 'block';
+
+      if (!isVisible) {
+        loadAdminRequests(); // ✅ โหลดคำขอ admin
+        loadAdminReports();  // ✅ โหลดรายงานโพสต์
+      }
+    });
+  }
 
   document.getElementById('categoryFilter').addEventListener('change', e => {
     const selected = e.target.value;
