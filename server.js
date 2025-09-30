@@ -7,6 +7,9 @@ const Post = require('./models/post'); // เพิ่มด้านบน
 const Comment = require('./models/Comment');const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const Report = require('./models/report'); // ✅ ต้อง import model ก่อน (lowercase)
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
 // ✅ Import Simple SQLite
 const { initDatabase, saveLog, getDashboardStats } = require('./simple-sqlite');
@@ -20,6 +23,35 @@ const { initDatabase, saveLog, getDashboardStats } = require('./simple-sqlite');
 
 const app = express();
 const PORT = 3000;
+
+// ✅ สร้างโฟลเดอร์ uploads ถ้าไม่มี
+if (!fs.existsSync('uploads')) {
+  fs.mkdirSync('uploads');
+}
+
+// ✅ Setup Multer for file uploads
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/');
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, 'avatar-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: function (req, file, cb) {
+    // Allow only image files
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed!'));
+    }
+  }
+});
 
 // ✅ Middleware รองรับ JSON และ x-www-form-urlencoded
 app.use(express.json());
@@ -108,29 +140,83 @@ app.get('/admin/dashboard-data', (req, res) => {
 
 // ✅ Static files
 app.use(express.static(__dirname));
+app.use('/uploads', express.static('uploads')); // ✅ เพิ่มเพื่อให้เข้าถึงรูปได้
+
+const Profile = require('./models/mongoProfile');
+
+// ✅ สร้างหรืออัปเดตโปรไฟล์ (รองรับการอัพโหลดรูป)
+app.post('/profile', upload.single('avatar'), async (req, res) => {
+  console.log('📝 Profile data received:', req.body);
+  console.log('📸 File received:', req.file);
+  
+  const { username, fullname, phone, bio } = req.body;
+  
+  // ✅ จัดการ avatar URL
+  let avatarUrl = req.body.avatarUrl; // ใช้ URL เดิมถ้ามี
+  if (req.file) {
+    avatarUrl = `/uploads/${req.file.filename}`; // ใช้รูปใหม่ถ้าอัพโหลด
+  }
+
+  try {
+    const existing = await Profile.findOne({ username });
+
+    if (existing) {
+      existing.fullname = fullname || existing.fullname;
+      existing.phone = phone || existing.phone;
+      existing.bio = bio || existing.bio;
+      if (avatarUrl) existing.avatarUrl = avatarUrl;
+      await existing.save();
+      return res.json({ 
+        message: '✅ โปรไฟล์ถูกอัปเดตแล้ว',
+        profile: existing
+      });
+    }
+
+    const profile = new Profile({ 
+      username, 
+      fullname: fullname || '', 
+      phone: phone || '', 
+      bio: bio || '', 
+      avatarUrl: avatarUrl || '' 
+    });
+    await profile.save();
+    res.json({ 
+      message: '✅ โปรไฟล์ถูกสร้างแล้ว',
+      profile: profile
+    });
+  } catch (err) {
+    console.error('❌ Profile error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ✅ ดึงโปรไฟล์ (มีการตรวจสอบสิทธิ์)
+app.get('/profile/:username', async (req, res) => {
+  try {
+    const requestedUsername = req.params.username;
+    const currentUsername = req.query.currentUser; // ส่งมาจาก frontend
+    const currentUserRole = req.query.role; // ส่งมาจาก frontend
+    
+    // ✅ ตรวจสอบสิทธิ์: admin ดูได้ทุกคน, user ธรรมดาดูได้แค่ตัวเอง
+    if (currentUserRole !== 'admin' && requestedUsername !== currentUsername) {
+      return res.status(403).json({ 
+        error: '❌ คุณไม่มีสิทธิ์เข้าถึงโปรไฟล์นี้' 
+      });
+    }
+    
+    const profile = await Profile.findOne({ username: requestedUsername });
+    if (!profile) return res.status(404).json({ error: 'ไม่พบโปรไฟล์' });
+    
+    res.json(profile);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // ✅ Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
-// ================= Post and Comment Routes =================
-function commentPost(postId) {
-  const content = document.getElementById(`comment-${postId}`).value;
-  const userId = localStorage.getItem('userId');
-
-  fetch('http://localhost:3000/comments', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ content, postId, userId })
-  })
-  .then(res => res.json())
-  .then(data => {
-    alert(data.message);
-    document.getElementById(`comment-${postId}`).value = ''; // ✅ เคลียร์ช่อง
-    loadComments(postId); // ✅ โหลดคอมเมนต์ใหม่
-  })
-  .catch(err => console.error('❌ Comment error:', err));
-}
 
 
 // ✅ ดึงโพสต์ทั้งหมด
@@ -386,42 +472,5 @@ app.put('/posts/:id', async (req, res) => {
     res.json({ message: '✅ Post updated successfully', post: updated });
   } catch (err) {
     res.status(500).json({ error: '❌ Failed to update post', details: err.message });
-  }
-});
-
-const Profile = require('./models/mongoProfile');
-
-// ✅ สร้างหรืออัปเดตโปรไฟล์
-app.post('/profile', async (req, res) => {
-  const { username, fullname, phone, bio, avatarUrl } = req.body;
-
-  try {
-    const existing = await Profile.findOne({ username });
-
-    if (existing) {
-      existing.fullname = fullname;
-      existing.phone = phone;
-      existing.bio = bio;
-      existing.avatarUrl = avatarUrl;
-      await existing.save();
-      return res.json({ message: '✅ โปรไฟล์ถูกอัปเดตแล้ว' });
-    }
-
-    const profile = new Profile({ username, fullname, phone, bio, avatarUrl });
-    await profile.save();
-    res.json({ message: '✅ โปรไฟล์ถูกสร้างแล้ว' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// ✅ ดึงโปรไฟล์
-app.get('/profile/:username', async (req, res) => {
-  try {
-    const profile = await Profile.findOne({ username: req.params.username });
-    if (!profile) return res.status(404).json({ error: 'ไม่พบโปรไฟล์' });
-    res.json(profile);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
   }
 });

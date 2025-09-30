@@ -43,8 +43,8 @@ fetch('http://localhost:3000/posts')
         <hr>
       `;
       container.appendChild(div);
-      loadComments(post._id); // ✅ โหลดคอมเมนต์ของแต่ละโพสต์
-      
+      // ✅ ลบการโหลดคอมเมนต์ทันที เพื่อป้องกัน timing issue
+      // loadComments จะถูกเรียกเมื่อคลิกปุ่ม toggle เท่านั้น
 
     });
   });
@@ -77,21 +77,7 @@ fetch('http://localhost:3000/posts')
     loadComments(postId);
   });
 }
-// ✅ โหลดคอมเมนต์ของโพสต์
-function loadComments(postId) {
-  fetch(`http://localhost:3000/comments/${postId}`)
-    .then(res => res.json())
-    .then(comments => {
-      const container = document.getElementById(`comments-${postId}`);
-      container.innerHTML = comments.map(c => `<p>💬 ${c.content}</p>`).join('');
 
-      // ✅ อัปเดตจำนวนคอมเมนต์บนปุ่ม
-      const toggleBtn = document.getElementById(`toggle-${postId}`);
-      if (toggleBtn) {
-        toggleBtn.textContent = `💬 Comments (${comments.length})`;
-      }
-    });
-}
 // ✅ ไลก์โพสต์
 function likePost(postId) {
   const userId = localStorage.getItem('userId');
@@ -164,6 +150,13 @@ function loadComments(postId) {
     .then(res => res.json())
     .then(comments => {
       const container = document.getElementById(`comments-${postId}`);
+      
+      // ✅ เพิ่ม null check เพื่อป้องกัน error
+      if (!container) {
+        console.warn(`❌ Container comments-${postId} not found`);
+        return;
+      }
+      
       container.innerHTML = '';
 
       comments.forEach(comment => {
@@ -184,6 +177,9 @@ function loadComments(postId) {
       if (toggleBtn) {
         toggleBtn.textContent = `💬 Commentator (${comments.length})`;
       }
+    })
+    .catch(err => {
+      console.error('❌ Error loading comments:', err);
     });
 }
 // ✅ สร้างโพสต์ใหม่
@@ -470,7 +466,7 @@ function loadPosts() {
           <hr>
         `;
         container.appendChild(div);
-        loadComments(post._id);
+        // ✅ ลบการโหลดคอมเมนต์ทันที
       });
     });
 }
@@ -515,7 +511,7 @@ function renderPosts(posts) {
       <hr>
     `;
     container.appendChild(div);
-    loadComments(post._id); // ✅ โหลดคอมเมนต์ของแต่ละโพสต์
+    // ✅ ลบการโหลดคอมเมนต์ทันที
   });
 }
 // ✅ จัดการ Admin Toggle Button (ย้ายมาไว้ตำแหน่งที่ถูกต้อง)
@@ -564,19 +560,52 @@ document.getElementById('profileForm').addEventListener('submit', e => {
   const phone = document.getElementById('phone').value;
   const bio = document.getElementById('bio').value;
   const avatarUrl = document.getElementById('avatarUrl').value;
+  const avatarFile = document.getElementById('avatar').files[0];
+
+  // ✅ ใช้ FormData เพื่อรองรับการอัพโหลดไฟล์
+  const formData = new FormData();
+  formData.append('username', username);
+  formData.append('fullname', fullname);
+  formData.append('phone', phone);
+  formData.append('bio', bio);
+  if (avatarUrl) formData.append('avatarUrl', avatarUrl);
+  if (avatarFile) formData.append('avatar', avatarFile);
 
   fetch('http://localhost:3000/profile', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ username, fullname, phone, bio, avatarUrl })
+    body: formData // ✅ ไม่ใส่ Content-Type header เพื่อให้ browser ตั้งเอง
   })
     .then(res => res.json())
-    .then(() => alert('✅ บันทึกโปรไฟล์แล้ว'));
+    .then(data => {
+      alert(data.message);
+      // ✅ เคลียร์ form หลังบันทึกเสร็จ
+      document.getElementById('profileForm').reset();
+    })
+    .catch(err => {
+      console.error('❌ Profile error:', err);
+      alert('❌ เกิดข้อผิดพลาดในการบันทึกโปรไฟล์');
+    });
 });
 
 function viewProfile(username) {
-  fetch(`http://localhost:3000/profile/${username}`)
-    .then(res => res.json())
+  console.log('🔍 viewProfile called with username:', username);
+  
+  const currentUsername = localStorage.getItem('username');
+  const currentRole = localStorage.getItem('role');
+  
+  // ✅ ส่ง currentUser และ role เพื่อตรวจสอบสิทธิ์
+  const url = `http://localhost:3000/profile/${username}?currentUser=${currentUsername}&role=${currentRole}`;
+  
+  fetch(url)
+    .then(res => {
+      if (!res.ok) {
+        if (res.status === 403) {
+          throw new Error('คุณไม่มีสิทธิ์เข้าถึงโปรไฟล์นี้');
+        }
+        throw new Error('เกิดข้อผิดพลาดในการโหลดโปรไฟล์');
+      }
+      return res.json();
+    })
     .then(profile => {
       const container = document.getElementById('postsContainer');
       container.innerHTML = `
@@ -584,8 +613,17 @@ function viewProfile(username) {
         <p><strong>ชื่อ:</strong> ${profile.fullname || '-'}</p>
         <p><strong>เบอร์โทร:</strong> ${profile.phone || '-'}</p>
         <p><strong>แนะนำตัว:</strong> ${profile.bio || '-'}</p>
-        ${profile.avatarUrl ? `<img src="${profile.avatarUrl}" width="150">` : ''}
+        ${profile.avatarUrl ? `<img src="${profile.avatarUrl}" width="150" style="border-radius: 50%;">` : ''}
         <button onclick="loadPosts()">🔙 กลับไปยังโพสต์</button>
       `;
+    })
+    .catch(err => {
+      console.error('❌ Profile error:', err);
+      alert(`❌ ${err.message}`);
     });
 }
+
+document.getElementById('toggleProfileBtn').addEventListener('click', () => {
+  const container = document.getElementById('profileFormContainer');
+  container.style.display = container.style.display === 'none' ? 'block' : 'none';
+});

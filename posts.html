@@ -7,60 +7,90 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h3>Create New Post</h3>
-<form id="postForm">
-  <input type="text" id="postTitle" placeholder="Title" required><br>
-  <textarea id="postContent" placeholder="Content" required></textarea><br>
-  <button type="submit">➕ Add Post</button>
-  <label for="postCategory">หมวดหมู่โพสต์:</label>
-  <select id="postCategory" required>
-  <option value="">-- เลือกหมวดหมู่ --</option>
-  <option value="ข่าวสาร">ข่าวสาร</option>
-  <option value="รีวิว">รีวิว</option>
-  <option value="ถามตอบ">ถามตอบ</option>
-  <option value="อื่นๆ">อื่นๆ</option>
-  </select><br>
+  <div class="main-container">
 
+    <!-- คอลัมน์ซ้าย -->
+    <div class="left-panel">
+      <!-- Welcome Bar -->
+      <div class="welcome-bar">
+        👤 Welcome, <span id="userDisplay"></span>
+      </div>
 
+      <!-- Create Post -->
+      <div class="create-post card">
+        <h3>Create New Post</h3>
+        <form id="postForm">
+          <input type="text" id="postTitle" placeholder="Title" required>
+          <textarea id="postContent" placeholder="Content" required></textarea>
 
-</form>
-<hr>
-  <h2>Welcome, <span id="userDisplay"></span></h2>
-  <button onclick="logout()">Logout</button>
-  <!-- Admin Dashboard button (แสดงเฉพาะ admin) -->
-  <button id="dashboardBtn" onclick="goToDashboard()" style="display:none; margin-left:10px;">📊 Dashboard</button>
-  <br>
-  <label for="categoryFilter">เลือกหมวดหมู่:</label>
-<select id="categoryFilter">
-  <option value="">-- แสดงทั้งหมด --</option>
-  <option value="ข่าวสาร">ข่าวสาร</option>
-  <option value="รีวิว">รีวิว</option>
-  <option value="ถามตอบ">ถามตอบ</option>
-  <option value="อื่นๆ">อื่นๆ</option>
-</select>
-  <div id="postsContainer"></div>
+          <label for="postCategory">หมวดหมู่โพสต์:</label>
+          <select id="postCategory" required>
+            <option value="">-- เลือกหมวดหมู่ --</option>
+            <option value="ข่าวสาร">ข่าวสาร</option>
+            <option value="รีวิว">รีวิว</option>
+            <option value="ถามตอบ">ถามตอบ</option>
+            <option value="อื่นๆ">อื่นๆ</option>
+          </select>
 
-<form id="profileForm">
-  <input type="text" id="fullname" placeholder="ชื่อ-นามสกุล"><br>
-  <input type="text" id="phone" placeholder="เบอร์โทร"><br>
-  <textarea id="bio" placeholder="แนะนำตัว"></textarea><br>
-  <input type="text" id="avatarUrl" placeholder="ลิงก์รูปโปรไฟล์"><br>
-  <button type="submit">💾 บันทึกโปรไฟล์</button>
-</form>
+          <button type="submit" class="btn-primary">➕ Add Post</button>
+        </form>
+      </div>
+
+      <!-- Dashboard -->
+      <div class="card">
+        <button id="dashboardBtn" onclick="goToDashboard()" style="display:none;">📊 Dashboard</button>
+      </div>
+
+      <!-- Logout (fixed bottom left) -->
+      <div class="logout-btn">
+        <button onclick="logout()">Logout</button>
+      </div>
+    </div>
+
+    <!-- คอลัมน์ขวา -->
+    <div class="right-panel">
+      <div class="filter-bar">
+        <label for="categoryFilter">เลือกหมวดหมู่:</label>
+        <select id="categoryFilter">
+          <option value="">-- แสดงทั้งหมด --</option>
+          <option value="ข่าวสาร">ข่าวสาร</option>
+          <option value="รีวิว">รีวิว</option>
+          <option value="ถามตอบ">ถามตอบ</option>
+          <option value="อื่นๆ">อื่นๆ</option>
+        </select>
+      </div>
+
+      <div id="postsContainer"></div>
+    </div>
+  </div>
+
+<!-- ปุ่มเปิดฟอร์ม -->
+<button id="toggleProfileBtn">👤 แก้ไขโปรไฟล์</button>
+
+<!-- ฟอร์มโปรไฟล์ (ซ่อนไว้ตอนเริ่มต้น) -->
+<div id="profileFormContainer" style="display: none; margin-top: 10px;">
+  <form id="profileForm" enctype="multipart/form-data">
+    <input type="text" id="fullname" placeholder="ชื่อ-นามสกุล"><br>
+    <input type="text" id="phone" placeholder="เบอร์โทร"><br>
+    <textarea id="bio" placeholder="แนะนำตัว"></textarea><br>
+    <input type="file" id="avatar" accept="image/*"><br>
+    <small>หรือใส่ลิงก์รูป:</small><br>
+    <input type="text" id="avatarUrl" placeholder="ลิงก์รูปโปรไฟล์"><br>
+    <button type="submit">💾 บันทึกโปรไฟล์</button>
+  </form>
+</div>
 
   <!-- ปุ่มเปิด popup -->
-<button id="adminToggleBtn" class="admin-toggle-btn">
-  🛡️ คำขอผู้ดูแลระบบ
-</button>
+  <button id="adminToggleBtn" class="admin-toggle-btn">
+    🛡️ คำขอผู้ดูแลระบบ
+  </button>
 
-<!-- กล่อง popup -->
-<div id="adminPopup" class="admin-popup">
-
-  <div id="adminRequests"></div>
-  <hr>
-  
-  <div id="adminReports"></div>
-</div>
+  <!-- กล่อง popup -->
+  <div id="adminPopup" class="admin-popup">
+    <div id="adminRequests"></div>
+    <hr>
+    <div id="adminReports"></div>
+  </div>
 
   <script src="posts.js"></script>
 </body>
