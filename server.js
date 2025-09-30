@@ -389,4 +389,39 @@ app.put('/posts/:id', async (req, res) => {
   }
 });
 
+const Profile = require('./models/mongoProfile');
 
+// ✅ สร้างหรืออัปเดตโปรไฟล์
+app.post('/profile', async (req, res) => {
+  const { username, fullname, phone, bio, avatarUrl } = req.body;
+
+  try {
+    const existing = await Profile.findOne({ username });
+
+    if (existing) {
+      existing.fullname = fullname;
+      existing.phone = phone;
+      existing.bio = bio;
+      existing.avatarUrl = avatarUrl;
+      await existing.save();
+      return res.json({ message: '✅ โปรไฟล์ถูกอัปเดตแล้ว' });
+    }
+
+    const profile = new Profile({ username, fullname, phone, bio, avatarUrl });
+    await profile.save();
+    res.json({ message: '✅ โปรไฟล์ถูกสร้างแล้ว' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ✅ ดึงโปรไฟล์
+app.get('/profile/:username', async (req, res) => {
+  try {
+    const profile = await Profile.findOne({ username: req.params.username });
+    if (!profile) return res.status(404).json({ error: 'ไม่พบโปรไฟล์' });
+    res.json(profile);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});

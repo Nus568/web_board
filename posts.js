@@ -507,6 +507,10 @@ function renderPosts(posts) {
       ${post.author?._id === userId || role === 'admin' ? `
         <button onclick="deletePost('${post._id}')">🗑️ Delete</button>
         <button onclick="startEditPost('${post._id}', \`${post.title.replace(/'/g, "&apos;")}\`, \`${post.content.replace(/'/g, "&apos;")}\`, '${post.category}')">✏️ Edit</button>
+        <p>
+  <strong>โพสต์โดย:</strong> ${post.author?.username || 'ไม่ทราบชื่อ'}
+  ${post.author?.username ? `<button onclick="viewProfile('${post.author.username}')">👤 ดูโปรไฟล์</button>` : ''}
+</p>
       ` : ''}
       <hr>
     `;
@@ -550,3 +554,38 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+
+document.getElementById('profileForm').addEventListener('submit', e => {
+  e.preventDefault();
+
+  const username = localStorage.getItem('username');
+  const fullname = document.getElementById('fullname').value;
+  const phone = document.getElementById('phone').value;
+  const bio = document.getElementById('bio').value;
+  const avatarUrl = document.getElementById('avatarUrl').value;
+
+  fetch('http://localhost:3000/profile', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, fullname, phone, bio, avatarUrl })
+  })
+    .then(res => res.json())
+    .then(() => alert('✅ บันทึกโปรไฟล์แล้ว'));
+});
+
+function viewProfile(username) {
+  fetch(`http://localhost:3000/profile/${username}`)
+    .then(res => res.json())
+    .then(profile => {
+      const container = document.getElementById('postsContainer');
+      container.innerHTML = `
+        <h2>👤 โปรไฟล์ของ ${profile.username}</h2>
+        <p><strong>ชื่อ:</strong> ${profile.fullname || '-'}</p>
+        <p><strong>เบอร์โทร:</strong> ${profile.phone || '-'}</p>
+        <p><strong>แนะนำตัว:</strong> ${profile.bio || '-'}</p>
+        ${profile.avatarUrl ? `<img src="${profile.avatarUrl}" width="150">` : ''}
+        <button onclick="loadPosts()">🔙 กลับไปยังโพสต์</button>
+      `;
+    });
+}
